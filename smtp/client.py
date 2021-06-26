@@ -4,34 +4,29 @@ from email.base64mime import body_encode as encode_base64
 from email.base64mime import EMPTYSTRING
 
 # Local server host and port
-
 SMTP_PORT = 25
 SMTP_SERVER_HOST = "localhost"
-
-# Constants
-
-CRLF = "\r\n"
-bCRLF = b"\r\n"
-MAXLINE = 1024 # RFC 821
 
 class SMTPClient:
     """
         Commands:
         - HELO
         - AUTH LOGIN
+        - MAIL FROM
+        - RCPT TO
+        - DATA
+        - RSET
         - QUIT
     """
 
-    sock = None
-    user = ""
-    pswd = ""
-
     def __init__(self, user, pswd):
-        self.timeout = socket._GLOBAL_DEFAULT_TIMEOUT
-        self.debug = 1
-        self.encoding = "ascii"
+        self.sock = None
         self.user = str(user)
         self.pswd = str(pswd)
+        self.debug = 1
+        self.encoding = "ascii" # encoding
+        self.MAXLINE = 1024 # RFC 821
+        self.CRLF = "\r\n" # line terminator
 
         # connecting to server
         self.connect(SMTP_SERVER_HOST, SMTP_PORT)
@@ -49,14 +44,26 @@ class SMTPClient:
             self.close()
             sys.exit("unable to connect to server.\n")
 
-        # HELO
-        (code, msg) = self.helo()
-        
-        if self.debug > 0:
-            print("\n- HELO: code: ", code, " msg: ", msg)
-        if code != 250:
-            self.close()
-            sys.exit("error in HELO.\n")
+    def sendEmail(self, userAddr="", rcpt=[], subject="", data=""):
+        ### for all -> check code ###
+
+        # DATA
+
+        # RCPT TO
+
+        # send date
+
+        # send from
+
+        # send subject
+
+        # send to
+
+        # send data
+
+        # quit
+
+        return
 
     def close(self):
         sock = self.sock
@@ -70,14 +77,14 @@ class SMTPClient:
 
     def resp(self):
         if self.sock:
-            resp = self.sock.recv(MAXLINE)
+            resp = self.sock.recv(self.MAXLINE)
 
             if not resp:
                 self.close()
                 raise Exception("server connection closed.\n")
             if self.debug > 0:
                 print("\n- reply: %s" % repr(resp))
-            if len(resp) > MAXLINE:
+            if len(resp) > self.MAXLINE:
                 self.close()
                 raise Exception("line too long.\n")
             
@@ -108,9 +115,9 @@ class SMTPClient:
 
     def cmd(self, cmd, args=""):
         if args == "":
-            line = '%s%s' % (cmd, CRLF)
+            line = '%s%s' % (cmd, self.CRLF)
         else:
-            line = '%s %s%s' % (cmd, args, CRLF)
+            line = '%s %s%s' % (cmd, args, self.CRLF)
         
         self.send(line)
 
@@ -121,7 +128,7 @@ class SMTPClient:
     """ SMTP commands """
 
     def helo(self):
-        return self.sendCmd("helo", self.user)
+        return self.sendCmd("HELO", self.user)
 
     def auth(self):
         # AUTH LOGIN
@@ -161,6 +168,23 @@ class SMTPClient:
             self.close()
             raise Exception("error in auth: password.\n")
 
+    def mailFrom(self):
+        return self.sendCmd("MAIL FROM:", self.user)
+    
+    def rcptTo(self, toAddr=[]):
+        resList = []
+
+        for addr in toAddr:
+            resList.append(self.sendCmd("RCPT TO:", addr))
+        
+        return resList
+
+    def data(self):
+        return self.sendCmd("DATA")
+
+    def rset(self):
+        return self.sendCmd("RSET")
+
     def quit(self):
         (code, msg) = self.sendCmd("QUIT")
 
@@ -169,7 +193,11 @@ class SMTPClient:
         if code == 221:
             self.close()
 
-if __name__ == '__main__':
+def run():
     c = SMTPClient("user1", "user1")
-    c.auth()
-    c.quit()
+    
+    while c.isOpen():
+        c.cmd(input())
+
+if __name__ == '__main__':
+    run()

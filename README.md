@@ -11,4 +11,4 @@ Commands implemented for POP3:
 > USER, PASS, STAT, LIST, RETR, DELE and QUIT.
 
 Commands implemented for SMTP:
-> HELO, AUTH LOGIN and QUIT..
+> HELO, AUTH LOGIN and QUIT.
