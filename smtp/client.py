@@ -30,8 +30,6 @@ class SMTPClient:
 
         user1 = dXNlcjE=
         user2 = dXNlcjI=
-
-        DATA From: User 2 <user2@localhost>\r\nSubject: Test\r\nTo: user1@localhost\r\nHello\r\n.
     """
 
     def __init__(self):
@@ -81,6 +79,9 @@ class SMTPClient:
         """ Encodes and sends a line to the server """
         if "quit" in line.lower():
             self.connOpen = False
+
+        if "data" == line.lower():
+            self.sendingData = True
         
         line = bytes(line, encoding)
         self.sock.sendall(line + CRLF)
@@ -96,11 +97,29 @@ class SMTPClient:
         """ Sets the state of the connection """
         return self.connOpen
 
+    def isSendingData(self):
+        return self.sendingData
+
+    def setSendingData(self, value=False):
+        self.sendingData = value
+
 def run():
     c = SMTPClient()
 
+    data = ""
     while c.isOpen():
-        c.cmd(input())
+        if c.isSendingData():
+            aux = input()
+
+            if aux == ".":
+                c.setSendingData(False)
+                data += aux
+                c.cmd(data)
+            else:
+                data += aux + "\r\n"
+                
+        else:
+            c.cmd(input())
 
 if __name__ == '__main__':
     run()
