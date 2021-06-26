@@ -9,7 +9,7 @@ POP3_SERVER_HOST = "localhost"
 CRLF = b'\r\n'
 
 # encoding
-encoding = "UTF-8"
+encoding = "latin-1"
 
 # 2048 from poplib. RFC 1939 -> 512
 MAXLINE = 2048
@@ -28,7 +28,6 @@ class POP3Client:
 
     def __init__(self):
         self.sock = None
-        self.debug = False
         self.open = False
 
         self.__connect(POP3_SERVER_HOST, POP3_PORT)
@@ -84,10 +83,6 @@ class POP3Client:
     def isOpen(self):
         """ Sets the state of the connection """
         return self.connOpen
-
-    def setDebug(self, value=False):
-        """ Sets debug mode """
-        self.debug = value
 
 def run():
     c = POP3Client()

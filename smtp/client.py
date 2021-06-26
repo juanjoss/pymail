@@ -2,10 +2,20 @@ import socket
 import sys
 from email.base64mime import body_encode as encode_base64
 from email.base64mime import EMPTYSTRING
+import smtplib
 
 # Local server host and port
 SMTP_PORT = 25
 SMTP_SERVER_HOST = "localhost"
+
+# Line terminators
+CRLF = b'\r\n'
+
+# encoding
+encoding = "ascii"
+
+# RFC 821
+MAXLINE = 1024
 
 class SMTPClient:
     """
@@ -17,185 +27,78 @@ class SMTPClient:
         - DATA
         - RSET
         - QUIT
+
+        user1 = dXNlcjE=
+        user2 = dXNlcjI=
+
+        DATA From: User 2 <user2@localhost>\r\nSubject: Test\r\nTo: user1@localhost\r\nHello\r\n.
     """
 
-    def __init__(self, user, pswd):
+    def __init__(self):
         self.sock = None
-        self.user = str(user)
-        self.pswd = str(pswd)
-        self.debug = 1
-        self.encoding = "ascii" # encoding
-        self.MAXLINE = 1024 # RFC 821
-        self.CRLF = "\r\n" # line terminator
+        self.connOpen = False
+        self.sendingData = False
 
         # connecting to server
-        self.connect(SMTP_SERVER_HOST, SMTP_PORT)
+        self.__connect(SMTP_SERVER_HOST, SMTP_PORT)
 
     """ connection methods """
 
-    def connect(self, host=SMTP_SERVER_HOST, port=SMTP_PORT):
+    def __connect(self, host=SMTP_SERVER_HOST, port=SMTP_PORT):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
 
         # connection
         self.sock.connect((host, port))
-        (code, msg) = self.resp()
         
-        if code != 220:
-            self.close()
-            sys.exit("unable to connect to server.\n")
+        if self.sock is None:
+            print("\nunable to connect to server.\n")
+            sys.exit()
 
-    def sendEmail(self, userAddr="", rcpt=[], subject="", data=""):
-        ### for all -> check code ###
+        self.connOpen = True
+        resp = self.__resp()
 
-        # DATA
+    def __close(self):
+        if self.sock is not None:
+            self.sock.shutdown(socket.SHUT_RDWR)
+            self.sock.close()
 
-        # RCPT TO
+    # connection methods
 
-        # send date
+    def __resp(self):
+        """ Retreives a response from the server """
+        resp = self.sock.recv(MAXLINE)
 
-        # send from
-
-        # send subject
-
-        # send to
-
-        # send data
-
-        # quit
-
-        return
-
-    def close(self):
-        sock = self.sock
-        self.sock = None
+        for s in resp.split(CRLF):
+            if s not in [b'', b'.']:
+                print(s.decode(encoding))
         
-        if sock:
-            sock.close()
-            sys.exit("\nclosing connection...\n")
+        if not self.connOpen:
+            self.__close()
 
-    """ connection and communication helpers """
+        return resp
 
-    def resp(self):
-        if self.sock:
-            resp = self.sock.recv(self.MAXLINE)
-
-            if not resp:
-                self.close()
-                raise Exception("server connection closed.\n")
-            if self.debug > 0:
-                print("\n- reply: %s" % repr(resp))
-            if len(resp) > self.MAXLINE:
-                self.close()
-                raise Exception("line too long.\n")
-            
-            try:
-                code = int(resp[:3])
-            except ValueError:
-                code = -1
-            
-            msg = resp[4:].strip(b'\t\r\n')
+    def __send(self, line):
+        """ Encodes and sends a line to the server """
+        if "quit" in line.lower():
+            self.connOpen = False
         
-        return code, msg
+        line = bytes(line, encoding)
+        self.sock.sendall(line + CRLF)
 
-    def send(self, line):
-        if self.sock:
-            try:
-                if isinstance(line, str):
-                    line = line.encode(self.encoding)
+    def cmd(self, line):
+        """ Sends a cmd to the server """
+        self.__send(line)
+        return self.__resp()
 
-                if self.debug > 0:
-                    print("\n- sending: %s" % line)
+    # setters
 
-                self.sock.sendall(line)
-            except OSError:
-                self.close()
-                raise Exception("error sending line to server.\n")
-        else:
-            raise Exception("socket not available.\n")
-
-    def cmd(self, cmd, args=""):
-        if args == "":
-            line = '%s%s' % (cmd, self.CRLF)
-        else:
-            line = '%s %s%s' % (cmd, args, self.CRLF)
-        
-        self.send(line)
-
-    def sendCmd(self, cmd, args=""):
-        self.cmd(cmd, args)
-        return self.resp()
-
-    """ SMTP commands """
-
-    def helo(self):
-        return self.sendCmd("HELO", self.user)
-
-    def auth(self):
-        # AUTH LOGIN
-        (code, msg) = self.sendCmd("AUTH LOGIN")
-
-        if self.debug > 0:
-            print("\n- AUTH LOGIN: code: %d, msg: %s" % (code, msg))
-        if code != 334:
-            self.close()
-            raise Exception("error in AUTH LOGIN.\n")
-        
-        # sending user
-        (code, msg) = self.sendCmd(
-            encode_base64(
-                self.user.encode(self.encoding), eol=EMPTYSTRING
-            )
-        )
-        
-        if self.debug > 0:
-                print("\n- user: %s, encoded: %s" % (self.user, encode_base64(self.user.encode(self.encoding))))
-        if code != 334:
-            self.close()
-            raise Exception("error in auth: user.\n")
-
-        # sending password
-        (code, msg) = self.sendCmd(
-            encode_base64(
-                self.pswd.encode(self.encoding), eol=EMPTYSTRING
-            )
-        )
-
-        if self.debug > 0:
-            print("\n- password: %s, encoded: %s" % (self.user, encode_base64(self.user.encode(self.encoding))))
-
-        # checking auth result
-        if code != 235:
-            self.close()
-            raise Exception("error in auth: password.\n")
-
-    def mailFrom(self):
-        return self.sendCmd("MAIL FROM:", self.user)
-    
-    def rcptTo(self, toAddr=[]):
-        resList = []
-
-        for addr in toAddr:
-            resList.append(self.sendCmd("RCPT TO:", addr))
-        
-        return resList
-
-    def data(self):
-        return self.sendCmd("DATA")
-
-    def rset(self):
-        return self.sendCmd("RSET")
-
-    def quit(self):
-        (code, msg) = self.sendCmd("QUIT")
-
-        if self.debug > 0:
-            print("\n- QUIT: code: %d, msg: %s" % (code, msg))
-        if code == 221:
-            self.close()
+    def isOpen(self):
+        """ Sets the state of the connection """
+        return self.connOpen
 
 def run():
-    c = SMTPClient("user1", "user1")
-    
+    c = SMTPClient()
+
     while c.isOpen():
         c.cmd(input())
 
