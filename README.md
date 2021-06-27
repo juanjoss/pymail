@@ -21,4 +21,4 @@ Default connection variables:
 > POP3_SERVER_PORT = "localhost", POP3_PORT = 110
 
 How to run it:
-> python 
+> python main.py
