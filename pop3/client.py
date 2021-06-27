@@ -11,30 +11,20 @@ CRLF = b'\r\n'
 # encoding
 encoding = "latin-1"
 
-# 2048 from poplib. RFC 1939 -> 512
+# poplib -> 2048. RFC 1939 -> 512
 MAXLINE = 2048
 
 class POP3Client:
-    """
-        Commands:
-            - USER
-            - PASS
-            - STAT
-            - LIST
-            - RETR
-            - DELE
-            - QUIT
-    """
-
     def __init__(self):
         self.sock = None
-        self.open = False
+        self.connOpen = False
 
         self.__connect(POP3_SERVER_HOST, POP3_PORT)
 
     # connect and close methods
 
     def __connect(self, host=POP3_SERVER_HOST, port=POP3_PORT):
+        """ Creates the socket and starts the connection """
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
         self.sock.connect((host, port))
         
@@ -46,6 +36,7 @@ class POP3Client:
         resp = self.__resp()
 
     def __close(self):
+        """ Closes the socket connection """
         if self.sock is not None:
             self.sock.shutdown(socket.SHUT_RDWR)
             self.sock.close()

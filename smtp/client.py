@@ -1,51 +1,32 @@
 import socket
 import sys
-from email.base64mime import body_encode as encode_base64
-from email.base64mime import EMPTYSTRING
-import smtplib
 
 # Local server host and port
 SMTP_PORT = 25
 SMTP_SERVER_HOST = "localhost"
 
-# Line terminators
+# Line terminator
 CRLF = b'\r\n'
 
 # encoding
-encoding = "ascii"
+encoding = "latin-1"
 
 # RFC 821
 MAXLINE = 1024
 
 class SMTPClient:
-    """
-        Commands:
-        - HELO
-        - AUTH LOGIN
-        - MAIL FROM
-        - RCPT TO
-        - DATA
-        - RSET
-        - QUIT
-
-        user1 = dXNlcjE=
-        user2 = dXNlcjI=
-    """
-
     def __init__(self):
         self.sock = None
         self.connOpen = False
         self.sendingData = False
 
-        # connecting to server
         self.__connect(SMTP_SERVER_HOST, SMTP_PORT)
 
-    """ connection methods """
+    # connect and close methods
 
     def __connect(self, host=SMTP_SERVER_HOST, port=SMTP_PORT):
+        """ Creates the socket and starts the connection """
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
-
-        # connection
         self.sock.connect((host, port))
         
         if self.sock is None:
@@ -56,6 +37,7 @@ class SMTPClient:
         resp = self.__resp()
 
     def __close(self):
+        """ Closes the socket connection """
         if self.sock is not None:
             self.sock.shutdown(socket.SHUT_RDWR)
             self.sock.close()
@@ -93,7 +75,7 @@ class SMTPClient:
 
     # setters
 
-    def isOpen(self):
+    def isConnOpen(self):
         """ Sets the state of the connection """
         return self.connOpen
 
@@ -107,7 +89,7 @@ def run():
     c = SMTPClient()
 
     data = ""
-    while c.isOpen():
+    while c.isConnOpen():
         if c.isSendingData():
             aux = input()
 

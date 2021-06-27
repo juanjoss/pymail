@@ -2,10 +2,12 @@ import sys
 from smtp import client as SMTP
 from pop3 import client as POP3
 
+# application entry point
+
 if __name__ == "__main__":
     while True:
         print("\n*** Welcome ***\n")
-        op = input("* Choose a client to use (smtp | pop3): ")
+        op = input("* Choose a client (smtp | pop3): ")
 
         if op.lower() == "smtp":
             SMTP.run()
