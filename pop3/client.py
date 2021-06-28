@@ -25,10 +25,10 @@ class POP3Client:
 
     def __connect(self, host=POP3_SERVER_HOST, port=POP3_PORT):
         """ Creates the socket and starts the connection """
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
-        self.sock.connect((host, port))
-        
-        if self.sock is None:
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
+            self.sock.connect((host, port))
+        except:
             print("\nunable to connect to server.\n")
             sys.exit()
 
