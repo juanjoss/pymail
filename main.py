@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
         if op.lower() == "smtp":
             SMTP.run()
-            sys.exit()
+            sys.exit("\nconnection closed.")
         
         elif op.lower() == "pop3":
             POP3.run()

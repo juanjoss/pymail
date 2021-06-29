@@ -34,7 +34,7 @@ class SMTPClient:
             sys.exit()
 
         self.connOpen = True
-        resp = self.__resp()
+        self.__resp()
 
     def __close(self):
         """ Closes the socket connection """
