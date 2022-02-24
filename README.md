@@ -1,7 +1,7 @@
 # PyMail
-Python program implementing SMTP and POP3 clients for sending and retreiving emails from local servers.
+Python program implementing SMTP and POP3 clients for sending and retreiving emails from a local server.
 
-This implementation was built as a final project for a networks and communications course. The topic was sockets and the task build two clients to communicate with local servers.
+This implementation was built as a final project for a networking course. The topic was sockets and the task build two clients to communicate with a local server.
 
 Notes:
 - This implementation just uses basic sockets functionality.
